@@ -12,7 +12,7 @@
 #include <utility>
 
 #include "ros/ros.h"
-#include "sensor_msgs/Laser.h"
+#include "sensor_msgs/LaserScan.h"
 #include "geometry_msgs/Twist.h"
 #include "geometry_msgs/Pose2D.h"
 #include "sensor_msgs/Range.h"

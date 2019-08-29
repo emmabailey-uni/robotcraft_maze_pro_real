@@ -68,9 +68,6 @@ private:
     ros::Subscriber pose_sub;
     ros::Subscriber reactive_vel_sub;
 
-    geometry_msgs::Twist calculateCommand(){
-        auto msg = geometry_msgs::Twist();
-    }
 
     //Callback functions for subscribers
     void poseCallback(const geometry_msgs::Pose2D& pose_msg){
@@ -244,13 +241,11 @@ public:
         {
 
             // Calculate the command to apply
-            auto vel_MSG = cmdVelUpdate();
             auto msg = calculateCommand();
-            auto rgb_MSG = setLEDs();
             auto pose_MSG = setPose();
 
             // Publish the new command
-            this->cmd_vel_pub.publish(vel_MSG);
+            //this->cmd_vel_pub.publish(vel_MSG);
             this->set_pose_pub.publish(pose_MSG);
 
 
