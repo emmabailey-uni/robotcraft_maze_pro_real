@@ -173,7 +173,7 @@ private:
             } else if(w < -max_ang){
                   w = -max_ang;
             }
-            
+
             break;
         }
 
@@ -500,14 +500,14 @@ public:
     void run(){
 
         // Send messages in a loop
-        ros::Rate loop_rate(10);
+        ros::Rate loop_rate(2);
         while (ros::ok())
         {
             if(path_set && pos_set){
-            auto msg = calculateCommand();
+              auto msg = calculateCommand();
 
-            // Publish the new command
-            this->path_follow_vel_pub.publish(msg);
+              // Publish the new command
+              this->path_follow_vel_pub.publish(msg);
             }
 
             ros::spinOnce();

@@ -235,17 +235,17 @@ public:
         int count = 0;
 
         // Send messages in a loop
-        ros::Rate loop_rate(10);
+        ros::Rate loop_rate(4);
 
         while (ros::ok())
         {
 
             // Calculate the command to apply
-            auto msg = calculateCommand();
+            auto vel_MSG = cmdVelUpdate();
             auto pose_MSG = setPose();
 
             // Publish the new command
-            //this->cmd_vel_pub.publish(vel_MSG);
+            this->cmd_vel_pub.publish(vel_MSG);
             this->set_pose_pub.publish(pose_MSG);
 
 
