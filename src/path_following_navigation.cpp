@@ -42,6 +42,8 @@ private:
     int Width;
     int Height;
     float cell_size;
+    float max_ang = 0.5;
+    float max_lin = 0.055;
 
     int endX, endY;
     int startX, startY;
@@ -144,6 +146,12 @@ private:
                 x_start = x;
                 y_start = y;
             }
+
+            if(w > 1.2){
+                w = 1.2;
+            } else if(w < -1.2){
+                  w = -1.2;
+            }
             break;
 
           case 2 :
@@ -159,7 +167,21 @@ private:
                 y_start = y;
                 ControllerState = ROTATE;
             }
+
+            if(w > max_ang){
+                w = max_ang;
+            } else if(w < -max_ang){
+                  w = -max_ang;
+            }
+            
             break;
+        }
+
+
+        if(v > max_lin){
+            v = max_lin;
+        } else if(v < -max_lin){
+              v = -max_lin;
         }
 
         square_vel_msg.linear.x = v;
