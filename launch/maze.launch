@@ -22,4 +22,9 @@
 	  <param name="endX" type="int" value="1" />
 	  <param name="endY" type="int" value="20" />
 
+    <!-- Initial pose of robot in maze on floor -->
+    <param name="initial_x" type="double" value="0.2" />
+	  <param name="initial_y" type="double" value="2.1" />
+	  <param name="initial_theta" type="double" value="0.0" />
+
 </launch>
