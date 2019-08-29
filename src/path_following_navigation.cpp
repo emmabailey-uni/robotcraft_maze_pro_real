@@ -234,7 +234,7 @@ private:
 
         for(int x = (rows-1); x >= 0; --x){
             for(int y = 0; y < cols; y++){
-                if(x == 0 || y == 0 || x == (cols -1) || y == (rows -1) || M[x][y] == 1){
+                if(x == 0 || y == 0 || x == (rows -1) || y == (cols -1) || M[x][y] == 1){
                     C[rows-1-x][y] = -1;
                 }else{
                     C[rows-1-x][y] = 0;
