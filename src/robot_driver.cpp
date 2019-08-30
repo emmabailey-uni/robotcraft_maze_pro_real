@@ -53,20 +53,11 @@ private:
 
 
     //Publisher Topics
-    ros::Publisher cmd_vel_pub;
     ros::Publisher set_pose_pub;
     ros::Publisher odom_pub;
-    ros::Publisher rgb_leds_pub;
-    ros::Publisher ir_front_sensor;
-    ros::Publisher ir_left_sensor;
-    ros::Publisher ir_right_sensor;
 
     //Subscriber Topics
-    ros::Subscriber left_dist_sub;
-    ros::Subscriber right_dist_sub;
-    ros::Subscriber front_dist_sub;
     ros::Subscriber pose_sub;
-    ros::Subscriber reactive_vel_sub;
 
 
     //Callback functions for subscribers
@@ -113,82 +104,6 @@ private:
 
     }
 
-    void leftCallback( const std_msgs::Float32::ConstPtr& msg){
-        sensor_msgs::Range ir_left;
-
-        //.data is for acces to all the data from the msg
-        float sensor_val_left = static_cast<float>(msg->data);
-        if(sensor_val_left < 0.15){
-            ROS_WARN("Collision risk! The robot is %f meters of an obsctacle, on the left side", sensor_val_left);
-        }
-
-        ir_left.header.frame_id = "base_link";
-        ir_left.radiation_type = 1;
-        ir_left.field_of_view = 0.034906585;
-        ir_left.min_range = 0.1;
-        ir_left.max_range = 0.8;
-        ir_left.range = sensor_val_left;
-
-        //Publish the left sensor value to ir_left_sensor
-        ir_left_sensor.publish(ir_left);
-
-
-
-    }
-
-    void rightCallback(const std_msgs::Float32::ConstPtr& msg){
-        sensor_msgs::Range ir_right;
-
-        float sensor_val_right = static_cast<float>(msg->data);
-        if(sensor_val_right < 0.15){
-            ROS_WARN("Collision risk! The robot is %f meters of an obsctacle, on the right side", sensor_val_right);
-        }
-
-        ir_right.header.frame_id = "base_link";
-        ir_right.radiation_type = 1;
-        ir_right.field_of_view = 0.034906585;
-        ir_right.min_range = 0.1;
-        ir_right.max_range = 0.8;
-        ir_right.range = sensor_val_right;
-
-        //Publish the right sensor value to ir_right_sensor
-        ir_right_sensor.publish(ir_right);
-    }
-
-    void frontCallback(const std_msgs::Float32::ConstPtr& msg){
-        sensor_msgs::Range ir_front;
-
-        float sensor_val_front = static_cast<float>(msg->data);
-        if(sensor_val_front < 0.15){
-            ROS_WARN("Collision risk! The robot is %f meters of an obsctacle, on the front side", sensor_val_front);
-        }
-
-        ir_front.header.frame_id = "base_link";
-        ir_front.radiation_type = 1;
-        ir_front.field_of_view = 0.034906585;
-        ir_front.min_range = 0.1;
-        ir_front.max_range = 0.8;
-        ir_front.range = sensor_val_front;
-
-        //Publish the front sensor value to ir_front_sensor
-        ir_front_sensor.publish(ir_front);
-    }
-
-
-    void reactiveVelCallback(const geometry_msgs::Twist& vel_msg){
-        // Update globally stored velocities for further use/publishing
-        v=vel_msg.linear.x;
-        w=vel_msg.angular.z;
-    }
-
-    geometry_msgs::Twist cmdVelUpdate(){
-        auto vel_MSG = geometry_msgs::Twist();
-        // Update velocities to be published
-        vel_MSG.linear.x = v;
-        vel_MSG.angular.z = w;
-        return vel_MSG;
-    }
-
     geometry_msgs::Pose2D setPose(){
         auto pose_MSG = geometry_msgs::Pose2D();
         // Set position to zero
@@ -196,14 +111,6 @@ private:
         pose_MSG.y = initial_y;
         pose_MSG.theta = initial_theta;
         return pose_MSG;
-    }
-
-    std_msgs::UInt8MultiArray setLEDs(){
-    auto rgb_MSG = std_msgs::UInt8MultiArray();
-    // Set color of led lights, the first 3 enteries are for LED_1 [255,0,0] and the last 3 for LED_2 [0,255,0]
-    // THIS IS NOT SET UP CORRECTLY, FOLLOW THIS EXAMPKE: http://alexsleat.co.uk/2011/07/02/ros-publishing-and-subscribing-to-arrays/
-    //rgb_MSG.data = [255,0,0,0,255,0];
-    return rgb_MSG;
     }
 
 
@@ -218,14 +125,11 @@ public:
         this->n.getParam("/initial_theta", initial_theta);
 
         // Create a publisher object, able to push messages
-        this->cmd_vel_pub = this->n.advertise<geometry_msgs::Twist>("cmd_vel", 10);
-        this->set_pose_pub = this->n.advertise<geometry_msgs::Pose2D>("set_pose", 10);
+        this->set_pose_pub = this->n.advertise<geometry_msgs::Pose2D>("set_pose", 2);
+		this->odom_pub = this->n.advertise<nav_msgs::Odometry>("odom", 10);
         // Create a subscriber for laser scans
-        this->reactive_vel_sub = n.subscribe("reactive_vel", 10, &RobotDriver::reactiveVelCallback, this);
         this->pose_sub = n.subscribe("pose", 10, &RobotDriver::poseCallback, this);
-        this->left_dist_sub = n.subscribe("left_distance", 10, &RobotDriver::leftCallback, this);
-        this->right_dist_sub = n.subscribe("right_distance", 10, &RobotDriver::rightCallback, this);
-        this->front_dist_sub = n.subscribe("front_distance", 10, &RobotDriver::frontCallback, this);
+
 
     }
 
@@ -235,17 +139,15 @@ public:
         int count = 0;
 
         // Send messages in a loop
-        ros::Rate loop_rate(4);
+        ros::Rate loop_rate(2);
 
         while (ros::ok())
         {
 
             // Calculate the command to apply
-            auto vel_MSG = cmdVelUpdate();
             auto pose_MSG = setPose();
 
             // Publish the new command
-            this->cmd_vel_pub.publish(vel_MSG);
             this->set_pose_pub.publish(pose_MSG);
 
 

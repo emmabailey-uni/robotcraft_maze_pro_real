@@ -48,7 +48,7 @@ private:
     int endX, endY;
     int startX, startY;
 
-    float x, y, theta;
+    float x_real=-999.0, y_real=-999.0, theta_real=-999.0;
 
 
     bool robot_stopped;
@@ -67,7 +67,7 @@ private:
     float p;         // Recovery speed during line following
     float theta_ref;
 
-    float x_offset, y_offset;
+    //float x_offset, y_offset;
 
 
     enum CONTROLLER_STATE
@@ -105,9 +105,9 @@ private:
           y_start = 0;
           init_flag = true;
           ControllerState = ROTATE;
-          my_p = final_path.front();
-          final_path.pop_front();
-          //std::cout << "FIRST GOAL" << (final_path.front()).first << "\n";
+          //my_p = final_path.front();
+          //final_path.pop_front();
+          std::cout << "FIRST GOAL" << (final_path.front()).first << "\n";
         }
 
         if(done_flag){
@@ -125,10 +125,10 @@ private:
         //std::cout<<"Theta current: "<<theta<<"\n";
 
 
-        theta_ref = atan2((y_goal-y),(x_goal-x));
-        //std::cout << "x_goal " << x_goal << " y_goal"  << y_goal <<"\n";
-        //std::cout << "x_curr " << x << " y_curr"  << y <<"\n";
-        //std::cout << "Theta_ref " << theta_ref << " Theta curr"  << theta <<"\n";
+        theta_ref = atan2((y_goal-y_real),(x_goal-x_real));
+        std::cout << "x_goal " << x_goal << " y_goal"  << y_goal <<"\n";
+        std::cout << "x_curr " << x_real << " y_curr"  << y_real <<"\n";
+        std::cout << "Theta_ref " << theta_ref << " Theta curr"  << theta_real <<"\n";
 
 
         switch (ControllerState) {
@@ -136,15 +136,15 @@ private:
           case 1 :
             //std::cout << "ROTATE" << "\n";
             //std::cout << "Diff" << (theta - theta_ref) <<"\n";
-            if (theta - theta_ref > 0.05 || theta - theta_ref < -0.05 ){
-                v = K_omega * (cos(theta)*(x_start-x) + sin(theta)*(y_start-y));
-                w = K_psi*(theta_ref-theta);
+            if (theta_real - theta_ref > 0.01 || theta_real - theta_ref < -0.01 ){
+                v = K_omega * (cos(theta_real)*(x_start-x_real) + sin(theta_real)*(y_start-y_real));
+                w = K_psi*(theta_ref-theta_real);
             } else{
                 w = 0;
                 v = 0;
                 ControllerState = FOLLOW_LINE;
-                x_start = x;
-                y_start = y;
+                x_start = x_real;
+                y_start = y_real;
             }
 
             if(w > 1.2){
@@ -156,15 +156,15 @@ private:
 
           case 2 :
             //std::cout << "FOLLOW LINE" << "\n";
-            if(cos(theta)*(x_goal-x) + sin(theta)*(y_goal-y) > 0.05 || cos(theta)*(x_goal-x) + sin(theta)*(y_goal-y) < -0.05 ){
-                w = K_psi*(sin(theta_ref)*(x + p*cos(theta)-x_start) - cos(theta_ref)*(y + p*sin(theta)- y_start));
-                v = K_omega * (cos(theta)*(x_goal-x) + sin(theta)*(y_goal-y));
+            if(cos(theta_real)*(x_goal-x_real) + sin(theta_real)*(y_goal-y_real) > 0.01 || cos(theta_real)*(x_goal-x_real) + sin(theta_real)*(y_goal-y_real) < -0.01 ){
+                w = K_psi*(sin(theta_ref)*(x_real + p*cos(theta_real)-x_start) - cos(theta_ref)*(y_real + p*sin(theta_real)- y_start));
+                v = K_omega * (cos(theta_real)*(x_goal-x_real) + sin(theta_real)*(y_goal-y_real));
             } else{
                 w = 0;
                 v = 0;
                 done_flag = true;
-                x_start = x;
-                y_start = y;
+                x_start = x_real;
+                y_start = y_real;
                 ControllerState = ROTATE;
             }
 
@@ -447,30 +447,20 @@ private:
 
     }
 
-    /*
-    void amclCallback(const geomery_msgs::PoseWithCovarianceStamped::ConstPtr &msg) {
-        tf::Quaternion q(msg->pose.pose.orientation.x, msg->pose.pose.orientation.y, msg->pose.pose.orientation.z, msg->pose.pose.orientation.w);
-        tf::Matrix3x3 m(q);
-        double roll, pitch, yaw;
-        m.getRPY(roll, pitch, yaw);
-        x = (msg->pose.pose.position.x)+x_offset; //0.2
-        y = (msg->pose.pose.position.y)+y_offset; //5.175;
-        theta = yaw;
-        //std::cout << "YAW" << yaw << "\n";
-        pos_set = true;
-    }
-    */
-
     void odomCallback(const nav_msgs::Odometry::ConstPtr &msg) {
         tf::Quaternion q(msg->pose.pose.orientation.x, msg->pose.pose.orientation.y, msg->pose.pose.orientation.z, msg->pose.pose.orientation.w);
         tf::Matrix3x3 m(q);
         double roll, pitch, yaw;
         m.getRPY(roll, pitch, yaw);
-        x = (msg->pose.pose.position.x)+x_offset; //0.2
-        y = (msg->pose.pose.position.y)+y_offset; //5.175;
-        theta = yaw;
+        x_real = (msg->pose.pose.position.x); //0.2
+        y_real = (msg->pose.pose.position.y); //5.175;
+        theta_real = yaw;
         //std::cout << "YAW" << yaw << "\n";
-        pos_set = true;
+        if(x_real < 0.001){
+        	pos_set = false;
+        }else{
+        	pos_set = true;	
+        } 
     }
 
 public:
@@ -479,7 +469,7 @@ public:
         this->n = ros::NodeHandle();
 
         // Create a publisher object, able to push messages
-        this->path_follow_vel_pub = this->n.advertise<geometry_msgs::Twist>("reactive_vel", 10);
+        this->path_follow_vel_pub = this->n.advertise<geometry_msgs::Twist>("reactive_vel", 2);
 
         // name_of_the_subscriber = n.subscribe("topic_name")
         this->odom_sub = n.subscribe("odom", 10, &PathFollowingController::odomCallback, this);
@@ -492,8 +482,8 @@ public:
         this->n.getParam("/K_psi", K_psi);
         this->n.getParam("/K_omega", K_omega);
         this->n.getParam("/p", p);
-        this->n.getParam("/x_offset", x_offset);
-        this->n.getParam("/y_offset", y_offset);
+        //this->n.getParam("/x_offset", x_offset);
+        //this->n.getParam("/y_offset", y_offset); 
 
     }
 
